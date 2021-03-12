@@ -1348,19 +1348,19 @@ config TOUCHSCREEN_SYNAPTICS_DSX
 
 source "drivers/input/touchscreen/synaptics_dsx/Kconfig"
 
-config TOUCHSCREEN_SYNAPTICS_TCM
+config TOUCHSCREEN_SYNAPTICS_TCM_F7A
 	bool "Synaptics TCM Touchscreen Driver"
 	depends on I2C
-	default y
+	default n
 	help
 	  Say Y here if you have a Synaptics Touchscreen.
 
 	  If unsure, say N.
 
 	  To compile this driver as a module, choose M here: the
-	  module will be called synaptics_tcm.
+	  module will be called synaptics_tcm_f7a.
 
-source "drivers/input/touchscreen/synaptics_tcm/Kconfig"
+source "drivers/input/touchscreen/synaptics_tcm_f7a/Kconfig"
 
 source "drivers/input/touchscreen/focaltech_touch/Kconfig"
 
