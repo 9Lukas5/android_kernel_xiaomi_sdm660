@@ -1,5 +1,6 @@
 /*
  * Copyright 2014-2017 NXP Semiconductors
+ * Copyright (C) 2020 XiaoMi, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,6 +60,30 @@ enum tfa98xx_dsp_fw_state {
        TFA98XX_DSP_FW_OK,
 };
 
+/* added by nxp34663 for Xiaomi's new features. begin*/
+enum {
+       TFA98XX_DEVICE_MUTE_OFF = 0,
+       TFA98XX_DEVICE_MUTE_ON,
+};
+
+enum {
+       IOCTL_CMD_GET_MEMTRACK_DATA = 0,
+       IOCTL_CMD_GET_CNT_VERSION,
+};
+
+enum {
+       MEMTRACK_ITEM_F0 = 0,
+       MEMTRACK_ITEM_SPEAKER_TEMPERATURE,
+       MEMTRACK_ITEM_CHIPSET_TEMPERATURE,
+       MEMTRACK_ITEM_MAX
+};
+
+struct livedata_cfg {
+       int address;
+       int track;
+       int scaler;
+};
+/* added by nxp34663 for Xiaomi's new features. end*/
 struct tfa98xx_firmware {
 	void			*base;
 	struct tfa98xx_device	*dev;
@@ -124,6 +149,13 @@ struct tfa98xx {
 	unsigned int flags;
 	bool set_mtp_cal;
 	uint16_t cal_data;
+	uint16_t tfa_mute_mode;
+	struct device_node *spk_id_gpio_p;
+
+	struct miscdevice tfa98xx_reg;
+	struct miscdevice tfa98xx_rw;
+	struct miscdevice tfa98xx_profile;
+	struct miscdevice tfa98xx_control;
 };
 
 

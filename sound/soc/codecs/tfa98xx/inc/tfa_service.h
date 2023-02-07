@@ -1,5 +1,6 @@
 /*
  * Copyright 2014-2017 NXP Semiconductors
+ * Copyright (C) 2020 XiaoMi, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +31,15 @@ extern "C" {
 #include "NXP_I2C.h"
 #endif
 
-#define TFA98XX_API_REV_STR "v6.5.0"
+/* Linux kernel module defines TFA98XX_GIT_VERSIONS in the linux_driver/Makefile */
+#if !defined(TFA98XX_GIT_VERSIONS)
+#include "versions.h"
+#endif
+#ifdef TFA98XX_GIT_VERSIONS
+  #define TFA98XX_API_REV_STR TFA98XX_GIT_VERSIONS
+#else
+  #define TFA98XX_API_REV_STR "v6.5.2"
+#endif
 
 #include "tfa_device.h"
 

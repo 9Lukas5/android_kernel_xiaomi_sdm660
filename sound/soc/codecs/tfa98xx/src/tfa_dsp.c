@@ -1,5 +1,6 @@
 /*
  * Copyright 2014-2017 NXP Semiconductors
+ * Copyright (C) 2020 XiaoMi, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +20,11 @@
 #include "tfa.h"
 #include "tfa98xx_tfafieldnames.h"
 #include "tfa_internal.h"
+
+#ifdef pr_fmt
+#undef pr_fmt
+#endif
+#define pr_fmt(fmt) "%s(): " fmt, __func__
 
 /* handle macro for bitfield */
 #define TFA_MK_BF(reg, pos, len) ((reg<<8)|(pos<<4)|(len-1))
@@ -897,10 +903,12 @@ tfa98xx_set_mute_tfa2(struct tfa_device *tfa, enum Tfa98xx_Mute mute)
 	switch (mute) {
 	case Tfa98xx_Mute_Off:
 		error = tfa->dev_ops.set_mute(tfa, 0);
+        TFA_SET_BF(tfa, AMPE, 1);
 		break;
 	case Tfa98xx_Mute_Amplifier:
 	case Tfa98xx_Mute_Digital:
 		error = tfa->dev_ops.set_mute(tfa, 1);
+        TFA_SET_BF(tfa, AMPE, 0);
 		break;
 	default:
 		return Tfa98xx_Error_Bad_Parameter;
@@ -1079,7 +1087,8 @@ enum Tfa98xx_Error
 tfa_dsp_patch(struct tfa_device *tfa, int patchLength,
 		 const unsigned char *patchBytes)
 {
-	enum Tfa98xx_Error error;
+	enum Tfa98xx_Error error = Tfa98xx_Error_Ok;
+	int status;
 	if(tfa->in_use == 0)
 		return Tfa98xx_Error_NotOpen;
 
@@ -1090,6 +1099,20 @@ tfa_dsp_patch(struct tfa_device *tfa, int patchLength,
 	if (Tfa98xx_Error_Ok != error) {
 		return error;
 	}
+	tfa98xx_dsp_system_stable(tfa, &status);
+	if (!status)
+		return Tfa98xx_Error_NoClock;
+
+	/******MCH_TO_TEST**************/
+	if (error == Tfa98xx_Error_Ok) {
+		pr_info("tfa cold boot patch\n");
+		error = tfaRunColdboot(tfa, 1);
+		if (error) {
+			pr_err("tfa_dsp_patch DSP_not_running\n");
+			return Tfa98xx_Error_DSP_not_running;
+		}
+	}
+	/**************************/
 	error =
 	    tfa98xx_process_patch_file(tfa, patchLength - PATCH_HEADER_LENGTH,
 			     patchBytes + PATCH_HEADER_LENGTH);
@@ -2938,11 +2961,12 @@ enum Tfa98xx_Error tfaRunWaitCalibration(struct tfa_device *tfa, int *calibrateD
  * tfa_dev_start will only do the basics: Going from powerdown to operating or a profile switch.
  * for calibrating or akoustic shock handling use the tfa98xxCalibration function.
  */
-enum Tfa98xx_Error tfa_dev_start(struct tfa_device *tfa, int next_profile, int vstep)
+enum tfa_error tfa_dev_start(struct tfa_device *tfa, int next_profile, int vstep)
 {
 	enum Tfa98xx_Error err = Tfa98xx_Error_Ok;
 	int active_profile = -1;
 
+	pr_debug("[NXP] %s begin...\n", __func__);
 	/* Get currentprofile */
 	active_profile = tfa_dev_get_swprof(tfa);
 	if (active_profile == 0xff)
@@ -2974,59 +2998,73 @@ enum Tfa98xx_Error tfa_dev_start(struct tfa_device *tfa, int next_profile, int v
 
 		/* Make sure internal oscillator is running for DSP devices (non-dsp and max1 this is no-op) */
 		tfa98xx_set_osc_powerdown(tfa, 0);
+		pr_debug("[NXP] %s after osc_powerdown\n", __func__);
 
 		/* Go to the Operating state */
+#if 0
 		tfa_dev_set_state(tfa, TFA_STATE_OPERATING | TFA_STATE_MUTE);
-		}
-		active_profile = tfa_dev_get_swprof(tfa);
+#else
+		tfa_dev_set_state(tfa, TFA_STATE_OPERATING);
+#endif
+		pr_debug("[NXP] %s after implemented tfa_dev_set_state()\n", __func__);
+	}
 
-		/* Profile switching */
-		if ((next_profile != active_profile && active_profile >= 0)) {
-			err = tfaContWriteProfile(tfa, next_profile, vstep);
-			if (err!=Tfa98xx_Error_Ok)
-				goto error_exit;
-		}
+	active_profile = tfa_dev_get_swprof(tfa);
 
-		/* If the profile contains the .standby suffix go to powerdown
-		 * else we should be in operating state
-		 */
-		if(strstr(tfaContProfileName(tfa->cnt, tfa->dev_idx, next_profile), ".standby") != NULL) {
-			tfa_dev_set_swprof(tfa, (unsigned short)next_profile);
-			tfa_dev_set_swvstep(tfa, (unsigned short)tfa->vstep);
-			goto error_exit;
-		}
-
-		err = show_current_state(tfa);
-
-		if (vstep != tfa->vstep && vstep != -1) {
-			err = tfaContWriteFilesVstep(tfa, next_profile, vstep);
-			if ( err != Tfa98xx_Error_Ok)
-				goto error_exit;
-		}
-
-		/* Always search and apply filters after a startup */
-		err = tfa_set_filters(tfa, next_profile);
+	/* Profile switching */
+	if ((next_profile != active_profile && active_profile >= 0)) {
+		err = tfaContWriteProfile(tfa, next_profile, vstep);
 		if (err!=Tfa98xx_Error_Ok)
 			goto error_exit;
+	}
+	pr_debug("[NXP] %s after implemented tfaContWriteProfile()\n", __func__);
 
+	/* If the profile contains the .standby suffix go to powerdown
+	 * else we should be in operating state
+	 */
+	if(strstr(tfaContProfileName(tfa->cnt, tfa->dev_idx, next_profile), ".standby") != NULL) {
 		tfa_dev_set_swprof(tfa, (unsigned short)next_profile);
 		tfa_dev_set_swvstep(tfa, (unsigned short)tfa->vstep);
+		goto error_exit;
+	}
 
-		/* PLMA5539: Gives information about current setting of powerswitch */
-		if (tfa->verbose) {
-			if (!tfa98xx_powerswitch_is_enabled(tfa))
-				pr_info("Device start without powerswitch enabled!\n");
-		}
+	err = show_current_state(tfa);
+#ifndef __KERNEL__
+	/* get current vstep*/
+	tfa->vstep = tfa_dev_get_swvstep(tfa);
+#endif
+	if ((TFA_GET_BF(tfa, CFE) != 0) && (vstep != tfa->vstep) && (vstep != -1)) {
+		err = tfaContWriteFilesVstep(tfa, next_profile, vstep);
+		if ( err != Tfa98xx_Error_Ok)
+			goto error_exit;
+		pr_debug("[NXP] %s after implemented tfaContWriteFilesVstep()\n", __func__);
+	}
+
+	/* Always search and apply filters after a startup */
+	err = tfa_set_filters(tfa, next_profile);
+	if (err!=Tfa98xx_Error_Ok)
+		goto error_exit;
+
+	tfa_dev_set_swprof(tfa, (unsigned short)next_profile);
+	tfa_dev_set_swvstep(tfa, (unsigned short)tfa->vstep);
+
+	/* PLMA5539: Gives information about current setting of powerswitch */
+	if (tfa->verbose) {
+		if (!tfa98xx_powerswitch_is_enabled(tfa))
+			pr_info("Device start without powerswitch enabled!\n");
+	}
 
 error_exit:
+	pr_debug("[NXP] %s end...\n", __func__);
 	show_current_state(tfa);
 
 	return err;
 }
 
-enum Tfa98xx_Error tfa_dev_stop(struct tfa_device *tfa)
+enum tfa_error tfa_dev_stop(struct tfa_device *tfa)
 {
 	enum Tfa98xx_Error err = Tfa98xx_Error_Ok;
+	int manstate = 0, retry = 0;
 
 	/* mute */
 	tfaRunMute(tfa);
@@ -3041,6 +3079,17 @@ enum Tfa98xx_Error tfa_dev_stop(struct tfa_device *tfa)
 
 	/* disable I2S output on TFA1 devices without TDM */
 	err = tfa98xx_aec_output(tfa, 0);
+
+	/* added by nxp34663 beging. */
+	/* we should ensure the state machine in powerdown mode here. */
+	manstate = TFA_GET_BF(tfa, MANSTATE);
+	while ((manstate >= 4) && (retry < 100)) {
+		pr_debug("%s  waitting state machine goto powerdown.  MANSTATE=%d\n", __func__, manstate);
+		msleep_interruptible(10);
+		manstate = TFA_GET_BF(tfa, MANSTATE);
+		retry++;
+	}
+	/* added by nxp34663 end. */
 
 	return err;
 }
@@ -3485,9 +3534,9 @@ int tfa_dev_probe(int slave, struct tfa_device *tfa)
 	return 0;
 }
 
-enum Tfa98xx_Error tfa_dev_set_state(struct tfa_device *tfa, enum tfa_state state)
+enum tfa_error tfa_dev_set_state(struct tfa_device *tfa, enum tfa_state state)
 {
-	enum Tfa98xx_Error err = Tfa98xx_Error_Ok;
+	enum tfa_error err = tfa_error_ok;
 	int loop = 50, ready = 0;
 	int count;
 
@@ -3512,7 +3561,7 @@ enum Tfa98xx_Error tfa_dev_set_state(struct tfa_device *tfa, enum tfa_state stat
 		/* Make sure the DSP is running! */
 		do {
 			err = tfa98xx_dsp_system_stable(tfa, &ready);
-			if (err != Tfa98xx_Error_Ok)
+			if (err != tfa_error_ok)
 				return err;
 			if (ready)
 				break;
@@ -3530,6 +3579,7 @@ enum Tfa98xx_Error tfa_dev_set_state(struct tfa_device *tfa, enum tfa_state stat
 		TFA_SET_BF(tfa, PWDN, 0);	/* Coming from state 0 */
 		TFA_SET_BF(tfa, MANSCONF, 1);	/* Coming from state 1 */
 		TFA_SET_BF(tfa, SBSL, 1);	/* Coming from state 6 */
+
 									/*
 									* Disable MTP clock to protect memory.
 									* However in case of calibration wait for DSP! (This should be case only during calibration).
@@ -3571,7 +3621,7 @@ enum Tfa98xx_Error tfa_dev_set_state(struct tfa_device *tfa, enum tfa_state stat
 		break;
 	default:
 		if (state & 0x0f)
-			return Tfa98xx_Error_Bad_Parameter;
+			return tfa_error_bad_param;
 	}
 
 	/* state modifiers */
@@ -3584,7 +3634,7 @@ enum Tfa98xx_Error tfa_dev_set_state(struct tfa_device *tfa, enum tfa_state stat
 
 	tfa->state = state;
 
-	return Tfa98xx_Error_Ok;
+	return tfa_error_ok;
 }
 
 enum tfa_state tfa_dev_get_state(struct tfa_device *tfa)
@@ -3656,9 +3706,9 @@ int tfa_dev_mtp_get(struct tfa_device *tfa, enum tfa_mtp item)
 	return value;
 }
 
-enum Tfa98xx_Error tfa_dev_mtp_set(struct tfa_device *tfa, enum tfa_mtp item, int value)
+enum tfa_error tfa_dev_mtp_set(struct tfa_device *tfa, enum tfa_mtp item, int value)
 {
-	enum Tfa98xx_Error err = Tfa98xx_Error_Ok;
+	enum tfa_error err = tfa_error_ok;
 
 	switch (item) {
 		case TFA_MTP_OTC:
@@ -3681,7 +3731,7 @@ enum Tfa98xx_Error tfa_dev_mtp_set(struct tfa_device *tfa, enum tfa_mtp item, in
 				TFA_SET_BF(tfa, R25CR, (uint16_t)value);
 			} else {
 				pr_debug("Error: Current device has no secondary Re25 channel \n");
-				err = Tfa98xx_Error_Bad_Parameter;
+				err = tfa_error_bad_param;
 			}
 			break;
 		case TFA_MTP_LOCK:
