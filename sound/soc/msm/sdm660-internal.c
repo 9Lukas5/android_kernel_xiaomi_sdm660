@@ -1,5 +1,4 @@
 /* Copyright (c) 2015-2018, 2020, The Linux Foundation. All rights reserved.
- * Copyright (C) 2019 XiaoMi, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -1312,8 +1311,6 @@ static void *def_msm_int_wcd_mbhc_cal(void)
 #define S(X, Y) ((WCD_MBHC_CAL_PLUG_TYPE_PTR(msm_int_wcd_cal)->X) = (Y))
 #if defined(CONFIG_MACH_LONGCHEER) || defined(CONFIG_MACH_XIAOMI_CLOVER)
 	S(v_hs_max, 1600);
-#elif defined(CONFIG_MACH_MI)
-	S(v_hs_max, 1700);
 #else
 	S(v_hs_max, 1500);
 #endif
@@ -1350,18 +1347,6 @@ static void *def_msm_int_wcd_mbhc_cal(void)
 	btn_high[3] = 500;
 	btn_low[4] = 500;
 	btn_high[4] = 500;
-#elif defined(CONFIG_MACH_MI)
-	btn_low[0] = 75;
-	btn_high[0] = 75;
-	btn_low[1] = 260;
-	btn_high[1] = 260;
-	btn_low[2] = 480;
-	btn_high[2] = 480;
-	btn_low[3] = 480;
-	btn_high[3] = 480;
-	btn_low[4] = 480;
-	btn_high[4] = 480;
-#elif defined(CONFIG_MACH_XIAOMI_CLOVER)
 	btn_low[0] = 75;
 	btn_high[0] = 75;
 	btn_low[1] = 246;
@@ -1384,7 +1369,6 @@ static void *def_msm_int_wcd_mbhc_cal(void)
 	btn_low[4] = 500;
 	btn_high[4] = 500;
 #endif
-
 	return msm_int_wcd_cal;
 }
 
@@ -2873,13 +2857,8 @@ static struct snd_soc_dai_link msm_mi2s_be_dai_links[] = {
 		.stream_name = "Secondary MI2S Playback",
 		.cpu_dai_name = "msm-dai-q6-mi2s.1",
 		.platform_name = "msm-pcm-routing",
-#ifdef CONFIG_SND_SOC_TFA9894
-		.codec_name = "tfa98xx.2-0034",
-		.codec_dai_name = "tfa98xx-aif-2-34",
-#else
 		.codec_name = "msm-stub-codec.1",
 		.codec_dai_name = "msm-stub-rx",
-#endif
 		.no_pcm = 1,
 		.dpcm_playback = 1,
 		.be_id = MSM_BACKEND_DAI_SECONDARY_MI2S_RX,
