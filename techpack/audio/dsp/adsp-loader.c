@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2012-2014, 2017-2020, The Linux Foundation. All rights reserved.
- * Copyright (C) 2019 XiaoMi, Inc.
  */
 
 #include <linux/init.h>
@@ -35,9 +34,6 @@ static ssize_t adsp_ssr_store(struct kobject *kobj,
 
 struct adsp_loader_private {
 	void *pil_h;
-#ifdef CONFIG_MACH_MI
-	const char *fw_name;
-#endif
 	struct kobject *boot_adsp_obj;
 	struct attribute_group *attr_group;
 	char *adsp_fw_name;
@@ -139,11 +135,7 @@ load_adsp:
 			if (!priv->adsp_fw_name) {
 				dev_dbg(&pdev->dev, "%s: Load default ADSP\n",
 					__func__);
-#ifndef CONFIG_MACH_MI
 				priv->pil_h = subsystem_get("adsp");
-#else
-				priv->pil_h = subsystem_get_with_fwname("adsp", priv->fw_name);
-#endif
 			} else {
 				dev_dbg(&pdev->dev, "%s: Load ADSP with fw name %s\n",
 					__func__, priv->adsp_fw_name);
@@ -290,12 +282,6 @@ static int adsp_loader_init_sysfs(struct platform_device *pdev)
 							__func__, ret);
 		goto error_return;
 	}
-
-#ifdef CONFIG_MACH_MI
-	/* get fw name */
-	of_property_read_string(pdev->dev.of_node, "qcom,firmware-name",
-							&priv->fw_name);
-#endif
 
 	adsp_private = pdev;
 
