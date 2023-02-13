@@ -16,6 +16,7 @@
 
 // msm-audio.dtsi
 &int_codec {
+	status = "okay";
 	/delete-property/ qcom,us-euro-gpios;
 };
 

@@ -55,7 +55,6 @@ enum {
 	HW_PLATFORM_STP = 23,
 	HW_PLATFORM_SBC = 24,
 	HW_PLATFORM_HDK = 31,
-	HW_PLATFORM_IDP = 34,
 #ifdef CONFIG_MACH_XIAOMI_PLATINA
 	HW_PLATFORM_D2T = 34,
 #endif
@@ -80,7 +79,6 @@ const char *hw_platform[] = {
 	[HW_PLATFORM_STP] = "STP",
 	[HW_PLATFORM_SBC] = "SBC",
 	[HW_PLATFORM_HDK] = "HDK",
-	[HW_PLATFORM_IDP] = "IDP",
 #ifdef CONFIG_MACH_XIAOMI_PLATINA
 	[HW_PLATFORM_D2T] = "Forte",
 #endif

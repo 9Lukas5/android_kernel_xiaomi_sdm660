@@ -304,48 +304,44 @@
 	};
 };
 
+&int_codec {
+	qcom,msm-mi2s-master = <0>, <1>, <0>, <0>;
+	qcom,msm-mi2s-ext-mclk = <1>,<0>,<0>,<0>;
+	qcom,wsa-max-devs = <0>;
+	qcom,msm-micbias1-ext-cap;
+	qcom,msm-micbias2-ext-cap;
+	qcom,msm-mbhc-hphl-swh = <1>;
+	qcom,msm-mbhc-gnd-swh = <1>;
+	qcom,msm-mbhc-usbc-audio-supported = <1>;
+	qcom,usbc-analog-en1_gpio = <&pm660_gpios 13 0>;
+	qcom,us-euro-gpios = <&us_euro_gpio>;
+};
+
+&dai_mi2s1 {
+	qcom,msm-mi2s-rx-lines = <1>;
+	qcom,msm-mi2s-tx-lines = <2>;
+	pinctrl-names = "default", "sleep";
+	pinctrl-0 = <&sec_mi2s_active
+		&sec_mi2s_sd0_active
+		&sec_mi2s_sd1_active>;
+	pinctrl-1 = <&sec_mi2s_sleep
+		&sec_mi2s_sd0_sleep
+		&sec_mi2s_sd1_sleep>;
+};
+
+&cdc_sdw_gpios {
+	status = "disabled";
+};
+
+&wsa_spkr_en1 {
+	status = "disabled";
+};
+
+&wsa_spkr_en2 {
+	status = "disabled";
+};
+
 &soc {
-	sound {
-		qcom,msm-mi2s-master = <0>, <1>, <0>, <0>;
-		qcom,msm-mi2s-ext-mclk = <1>,<0>,<0>,<0>;
-		qcom,wsa-max-devs = <0>;
-		qcom,msm-micbias1-ext-cap;
-		qcom,msm-micbias2-ext-cap;
-		qcom,msm-mbhc-hphl-swh = <1>;
-		qcom,msm-mbhc-gnd-swh = <1>;
-		qcom,msm-mbhc-usbc-audio-supported = <1>;
-		qcom,usbc-analog-en1_gpio = <&pm660_gpios 13 0>;
-		qcom,us-euro-gpios = <&us_euro_gpio>;
-	};
-
-	qcom,msm-dai-mi2s {
-		compatible = "qcom,msm-dai-mi2s";
-		dai_mi2s1: qcom,msm-dai-q6-mi2s-sec {
-			compatible = "qcom,msm-dai-q6-mi2s";
-			qcom,msm-dai-q6-mi2s-dev-id = <1>;
-			qcom,msm-mi2s-rx-lines = <1>;
-			qcom,msm-mi2s-tx-lines = <2>;
-			pinctrl-names = "default", "sleep";
-			pinctrl-0 = <&sec_mi2s_active
-					&sec_mi2s_sd0_active
-					&sec_mi2s_sd1_active>;
-			pinctrl-1 = <&sec_mi2s_sleep
-					&sec_mi2s_sd0_sleep
-					&sec_mi2s_sd1_sleep>;
-		};
-	};
-	cdc_sdw_gpios: sdw_clk_data_pinctrl {
-		status = "disabled";
-	};
-
-	wsa_spkr_en1: wsa_spkr_en1_pinctrl {
-		status = "disabled";
-	};
-
-	wsa_spkr_en2: wsa_spkr_en2_pinctrl {
-		status = "disabled";
-	};
-
 	spk_id_pin: spk-id-pin@113{
 		compatible = "audio,speaker-id";
 		audio,speaker-id-gpio = <&tlmm 113 0>;
@@ -374,7 +370,6 @@
 
 &i2c_2 { /* smart PA device. */
 		status = "okay";
-		qcom,disable-dma;		
 		tfa98xx@34 {
 		compatible = "nxp,tfa98xx";
 		reset-gpio = <&tlmm 43 0>;
