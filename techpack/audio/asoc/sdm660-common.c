@@ -21,6 +21,10 @@
 #ifdef CONFIG_SND_SOC_USB_HEADSET
 #include "codecs/usb-headset.h"
 #endif
+#include <soc/qcom/socinfo.h>
+#ifdef CONFIG_SND_SOC_TFA9894
+#include "codecs/tfa98xx/inc/tfa_platform_interface_definition.h"
+#endif
 
 #define __CHIPSET__ "SDM660 "
 #define MSM_DAILINK_NAME(name) (__CHIPSET__#name)
@@ -286,7 +290,11 @@ static struct dev_config mi2s_tx_cfg[] = {
 #else
 	[PRIM_MI2S] = {SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 1},
 #endif
+#ifdef CONFIG_SND_SOC_TFA9894
+	[SEC_MI2S]  = {SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 2},
+#else
 	[SEC_MI2S]  = {SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 1},
+#endif
 	[TERT_MI2S] = {SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 1},
 	[QUAT_MI2S] = {SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 1},
 	[QUIN_MI2S] = {SAMPLING_RATE_48KHZ, SNDRV_PCM_FORMAT_S16_LE, 1},

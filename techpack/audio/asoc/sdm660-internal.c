@@ -13,6 +13,9 @@
 #include "codecs/sdm660_cdc/msm-digital-cdc.h"
 #include "codecs/sdm660_cdc/msm-analog-cdc.h"
 #include "codecs/msm_sdw/msm_sdw.h"
+#ifdef CONFIG_SND_SOC_TFA9894
+#include "codecs/tfa98xx/inc/tfa_platform_interface_definition.h"
+#endif
 
 #define __CHIPSET__ "SDM660 "
 #define MSM_DAILINK_NAME(name) (__CHIPSET__#name)
@@ -2220,6 +2223,23 @@ static struct snd_soc_dai_link msm_int_dai[] = {
 		 /* this dailink has playback support */
 		.ignore_pmdown_time = 1,
 		/* This dainlink has MI2S support */
+		.codec_dai_name = "snd-soc-dummy-dai",
+		.codec_name = "snd-soc-dummy",
+	},
+#endif
+#ifdef CONFIG_SND_SOC_TFA9894
+	{/* hw:x,40 */
+		.name = TFA_TX_HOSTLESS_CODEC_NAME,
+		.stream_name = TFA_TX_HOSTLESS_STREAM_NAME,
+		.cpu_dai_name = TFA_TX_HOSTLESS_CPU_DAI_NAME,
+		.platform_name	= "msm-pcm-hostless",
+		.dynamic = 1,
+		.dpcm_capture = 1,
+		.trigger = {SND_SOC_DPCM_TRIGGER_POST,
+					SND_SOC_DPCM_TRIGGER_POST},
+		.no_host_mode = SND_SOC_DAI_LINK_NO_HOST,
+		.ignore_suspend = 1,
+		.ignore_pmdown_time = 1,
 		.codec_dai_name = "snd-soc-dummy-dai",
 		.codec_name = "snd-soc-dummy",
 	},
