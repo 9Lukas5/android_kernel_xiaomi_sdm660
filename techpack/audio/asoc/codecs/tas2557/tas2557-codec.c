@@ -22,6 +22,7 @@
 
 #ifdef CONFIG_TAS2557_CODEC
 
+
 #include <linux/module.h>
 #include <linux/moduleparam.h>
 #include <linux/init.h>
@@ -124,7 +125,7 @@ static const struct snd_soc_dapm_widget tas2557_dapm_widgets[] = {
 	SND_SOC_DAPM_SUPPLY("NDivider", SND_SOC_NOPM, 0, 0, NULL, 0),
 
 	SND_SOC_DAPM_OUTPUT("OUT"),
-	ND_SOC_DAPM_INPUT("IN")
+	SND_SOC_DAPM_INPUT("IN")
 };
 
 static const struct snd_soc_dapm_route tas2557_audio_map[] = {
@@ -528,12 +529,12 @@ static struct snd_soc_dai_driver tas2557_dai_driver[] = {
 				.formats = TAS2557_FORMATS,
 			},
 		.capture = {
-			.stream_name = "ASI1 Capture",
-			.channels_min = 2,
-			.channels_max = 2,
-			.rates = SNDRV_PCM_RATE_8000_192000,
-			.formats = TAS2557_FORMATS,
-		},
+				.stream_name = "ASI1 Capture",
+				.channels_min = 2,
+				.channels_max = 2,
+				.rates = SNDRV_PCM_RATE_8000_192000,
+				.formats = TAS2557_FORMATS,
+			},
 		.ops = &tas2557_dai_ops,
 		.symmetric_rates = 1,
 	},

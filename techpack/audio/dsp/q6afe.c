@@ -9313,7 +9313,7 @@ int afe_set_lpass_clock_v2(u16 port_id, struct afe_clk_set *cfg)
 {
 	int index = 0;
 	int ret = 0;
-	u16 idx = 0;
+	int idx = 0;
 	uint32_t build_major_version = 0;
 	uint32_t build_minor_version = 0;
 	uint32_t build_branch_version = 0;
@@ -9347,12 +9347,9 @@ int afe_set_lpass_clock_v2(u16 port_id, struct afe_clk_set *cfg)
 	}
 	idx = afe_get_port_idx(port_id);
 	if (idx < 0) {
-		pr_err("%s: cannot get clock id for port id 0x%x\n", __func__,
+		pr_debug("%s: cannot get clock id for port id 0x%x\n", __func__,
 			port_id);
-		return -EINVAL;
-	}
-
-	if (clkinfo_per_port[idx].mclk_src_id != MCLK_SRC_INT) {
+	} else if (clkinfo_per_port[idx].mclk_src_id != MCLK_SRC_INT) {
 		pr_debug("%s: ext MCLK src %d\n",
 			__func__, clkinfo_per_port[idx].mclk_src_id);
 
@@ -9382,10 +9379,12 @@ int afe_set_lpass_clock_v2(u16 port_id, struct afe_clk_set *cfg)
 
 		ret = afe_set_lpass_clk_cfg_ext_mclk(index, cfg,
 					clkinfo_per_port[idx].mclk_freq);
-	} else {
-		ret = afe_set_lpass_clk_cfg(index, cfg);
+		goto done;
 	}
 
+	ret = afe_set_lpass_clk_cfg(index, cfg);
+
+done:
 	if (ret)
 		pr_err("%s: afe_set_lpass_clk_cfg_v2 failed %d\n",
 			__func__, ret);
@@ -9622,7 +9621,6 @@ static int afe_get_sp_th_vi_v_vali_data(
 
 	mutex_lock(&this_afe.afe_cmd_lock);
 	memset(&param_hdr, 0, sizeof(param_hdr));
-	memset(th_vi_v_vali, 0, sizeof(*th_vi_v_vali));
 
 	param_hdr.module_id = AFE_MODULE_SPEAKER_PROTECTION_V2_TH_VI;
 	param_hdr.instance_id = INSTANCE_ID_0;
